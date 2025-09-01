@@ -23,7 +23,7 @@ permissions:
 
 jobs:
   research:
-    # Extra guard: never run on push, only when you click "Run workflow"
+    # Guard: only run when manually dispatched
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
@@ -56,3 +56,4 @@ jobs:
             Automated research run for **${{ inputs.topic }}**.
           branch: "research/${{ github.run_id }}"
           delete-branch: true
+
