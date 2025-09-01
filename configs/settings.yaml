@@ -1,0 +1,10 @@
+# Tweak defaults here; CLI flags override these.
+max_sources: 12 # cap total unique sources pulled
+max_per_query: 6 # cap per subquestion query
+depth: 2 # how many expansion rounds of subquestions
+region: "us-en" # search region for DuckDuckGo
+timeout_s: 15 # HTTP fetch timeout
+min_chars: 1200 # ignore tiny pages
+dedupe_jaccard: 0.85 # near-duplicate threshold on 3-gram shingles
+model: "gpt-4o-mini" # OpenAI model name (if OPENAI_API_KEY provided)
+temperature: 0.2
