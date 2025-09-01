@@ -1,61 +1,58 @@
 name: Run Research
 
-
 on:
-workflow_dispatch:
-inputs:
-topic:
-description: "Topic to research"
-required: true
-type: string
-max_sources:
-description: "Max total sources"
-required: false
-default: "12"
-depth:
-description: "Subquestion expansion depth"
-required: false
-default: "2"
-
+  # Manual trigger only
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Topic to research"
+        required: true
+        type: string
+      max_sources:
+        description: "Max total sources"
+        required: false
+        default: "12"
+      depth:
+        description: "Subquestion expansion depth"
+        required: false
+        default: "2"
 
 permissions:
-contents: write
-pull-requests: write
-
+  contents: write
+  pull-requests: write
 
 jobs:
-research:
-runs-on: ubuntu-latest
-steps:
-- uses: actions/checkout@v4
+  research:
+    # Extra guard: never run on push, only when you click "Run workflow"
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
 
+    steps:
+      - uses: actions/checkout@v4
 
-- uses: actions/setup-python@v5
-with:
-python-version: '3.11'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-- name: Install deps
-run: |
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+      - name: Run pipeline
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          python scripts/research.py "${{ inputs.topic }}" \
+            --max-sources ${{ inputs.max_sources }} \
+            --depth ${{ inputs.depth }}
 
-
-- name: Run pipeline
-env:
-OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-run: |
-python scripts/research.py "${{ inputs.topic }}" \
---max-sources ${{ inputs.max_sources }} \
---depth ${{ inputs.depth }}
-
-
-- name: Create Pull Request
-uses: peter-evans/create-pull-request@v6
-with:
-commit-message: "research: ${{ inputs.topic }}"
-title: "Research: ${{ inputs.topic }}"
-body: |
-Automated research run for **${{ inputs.topic }}**.
-branch: "research/${{ github.run_id }}"
-delete-branch: true
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "research: ${{ inputs.topic }}"
+          title: "Research: ${{ inputs.topic }}"
+          body: |
+            Automated research run for **${{ inputs.topic }}**.
+          branch: "research/${{ github.run_id }}"
+          delete-branch: true
