@@ -1,7 +1,6 @@
 name: Run Research
 
 on:
-  # Manual trigger only
   workflow_dispatch:
     inputs:
       topic:
@@ -23,7 +22,6 @@ permissions:
 
 jobs:
   research:
-    # Guard: only run when manually dispatched
     if: ${{ github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
 
@@ -34,15 +32,37 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Install deps
+      # 👇 Extra diagnostics so we can see what's going on
+      - name: Environment & repo snapshot
         run: |
+          set -euxo pipefail
+          pwd
+          python --version
+          pip --version
+          ls -R
+          echo "----- settings.yaml -----"
+          cat configs/settings.yaml || true
+          echo "-------------------------"
+
+      - name: Install deps (verbose)
+        run: |
+          set -euxo pipefail
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt -v
+          python - <<'PY'
+          import sys
+          print("Python:", sys.version)
+          import yaml, requests
+          import duckduckgo_search, trafilatura
+          from slugify import slugify
+          print("Imports OK")
+          PY
 
       - name: Run pipeline
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          set -euxo pipefail
           python scripts/research.py "${{ inputs.topic }}" \
             --max-sources ${{ inputs.max_sources }} \
             --depth ${{ inputs.depth }}
@@ -56,4 +76,3 @@ jobs:
             Automated research run for **${{ inputs.topic }}**.
           branch: "research/${{ github.run_id }}"
           delete-branch: true
-
